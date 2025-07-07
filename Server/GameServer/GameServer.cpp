@@ -1,9 +1,24 @@
-﻿// GameServer.cpp : 이 파일에는 'main' 함수가 포함됩니다. 거기서 프로그램 실행이 시작되고 종료됩니다.
-//
-#include "pch.h"
+﻿#include "pch.h"
 #include <iostream>
 
+#include <thread>
+
+void HelloThread()
+{
+    cout << "Hello Thread" << endl;
+}
 int main()
 {
-    HelloWorld();
+
+    std::thread t;
+
+    t = std::thread(HelloThread);
+    cout << "Hello Main" << endl;
+
+
+    int32 count = t.hardware_concurrency(); //가용 가능한 코어 갯수
+    
+    cout << count << endl;
+
+    t.join(); //쓰레드 작업이 끝날때까지 부모 쓰레드 대기
 }
