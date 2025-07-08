@@ -2,23 +2,34 @@
 #include <iostream>
 
 #include <thread>
-
+#include <atomic>
 void HelloThread()
 {
     cout << "Hello Thread" << endl;
 }
+atomic<int32> sum = 0;
+void Add()
+{
+    for (int32 i = 0; i < 100'000; i++)
+    {
+        sum++;
+    }
+}
+void Sub()
+{
+    for (int32 i = 0; i < 100'000; i++)
+    {
+        sum--;
+    }
+}
 int main()
 {
+    thread t1(Add);
+    thread t2(Sub);
 
-    std::thread t;
-
-    t = std::thread(HelloThread);
-    cout << "Hello Main" << endl;
-
-
-    int32 count = t.hardware_concurrency(); //가용 가능한 코어 갯수
+    t1.join();
+    t2.join();
     
-    cout << count << endl;
+    cout << sum << endl;
 
-    t.join(); //쓰레드 작업이 끝날때까지 부모 쓰레드 대기
 }
