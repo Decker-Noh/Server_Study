@@ -3,33 +3,47 @@
 
 #include <thread>
 #include <atomic>
-void HelloThread()
+#include <mutex>
+
+vector<int32> v;
+
+mutex m;
+
+template<typename T>
+class LockGuard
 {
-    cout << "Hello Thread" << endl;
-}
-atomic<int32> sum = 0;
-void Add()
+public:
+	LockGuard(T& m)
+	{
+		_mutex = &m;
+		_mutex->lock();
+	}
+	~LockGuard()
+	{
+		_mutex = &m;
+		_mutex->unlock();
+	}
+private:
+	T* _mutex;
+};
+
+void Push()
 {
-    for (int32 i = 0; i < 100'000; i++)
-    {
-        sum++;
-    }
+	for (int32 i = 0; i < 10000; i++)
+	{
+		LockGuard<std::mutex> lockGuard(m);
+		v.push_back(1);
+
+	}
 }
-void Sub()
-{
-    for (int32 i = 0; i < 100'000; i++)
-    {
-        sum--;
-    }
-}
+
 int main()
 {
-    thread t1(Add);
-    thread t2(Sub);
+	thread t1(Push);
+	thread t2(Push);
 
-    t1.join();
-    t2.join();
-    
-    cout << sum << endl;
+	t1.join();
+	t2.join();
+	cout << v.size() << endl;
 
 }
