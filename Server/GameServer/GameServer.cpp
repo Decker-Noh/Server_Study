@@ -5,37 +5,48 @@
 #include <atomic>
 #include <mutex>
 
-vector<int32> v;
-
-mutex m;
-
-template<typename T>
-class LockGuard
+class Task1
 {
 public:
-	LockGuard(T& m)
+	static Task1* Instance()
 	{
-		_mutex = &m;
-		_mutex->lock();
+		static Task1 instance;
+		return &instance;
 	}
-	~LockGuard()
+	void GetTask(int32 n)
 	{
-		_mutex = &m;
-		_mutex->unlock();
+		lock_guard<mutex> guard(mutex);
+		//뭔갈함
 	}
+	void Save1()
+	{
+		lock_guard<mutex> guard(mutex);//Task1의 뮤텍스 락
+		Task2::Instance()->GetTask(1); //Task2의 뮤텍스 락
+	};
 private:
-	T* _mutex;
+	mutex _mutex;
 };
-
-void Push()
+class Task2
 {
-	for (int32 i = 0; i < 10000; i++)
+public:
+	static Task2* Instance()
 	{
-		LockGuard<std::mutex> lockGuard(m);
-		v.push_back(1);
-
+		static Task2 instance;
+		return &instance;
 	}
-}
+	void GetTask(int32 n)
+	{
+		lock_guard<mutex> guard(mutex);
+		//뭔갈함
+	}
+	void Save2()
+	{
+		lock_guard<mutex> guard(mutex);//Task2의 뮤텍스 락
+		Task1::Instance()->GetTask(1);//Task1의 뮤텍스 락
+	};
+private:
+	mutex _mutex;
+};
 
 int main()
 {
