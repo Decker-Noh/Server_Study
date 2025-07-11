@@ -5,56 +5,54 @@
 #include <atomic>
 #include <mutex>
 
-class Task1
-{
-public:
-	static Task1* Instance()
-	{
-		static Task1 instance;
-		return &instance;
-	}
-	void GetTask(int32 n)
-	{
-		lock_guard<mutex> guard(mutex);
-		//뭔갈함
-	}
-	void Save1()
-	{
-		lock_guard<mutex> guard(mutex);//Task1의 뮤텍스 락
-		Task2::Instance()->GetTask(1); //Task2의 뮤텍스 락
-	};
-private:
-	mutex _mutex;
-};
-class Task2
-{
-public:
-	static Task2* Instance()
-	{
-		static Task2 instance;
-		return &instance;
-	}
-	void GetTask(int32 n)
-	{
-		lock_guard<mutex> guard(mutex);
-		//뭔갈함
-	}
-	void Save2()
-	{
-		lock_guard<mutex> guard(mutex);//Task2의 뮤텍스 락
-		Task1::Instance()->GetTask(1);//Task1의 뮤텍스 락
-	};
-private:
-	mutex _mutex;
-};
+int32 sum = 0;
 
+class SpinLock
+{
+public:
+	void Lock()
+	{
+		bool expected = false;
+		bool desired = true;
+		while (_locked.compare_exchange_strong(expected, desired) == false)
+		{
+			expected = false;
+		}
+	}
+	void UnLock()
+	{
+		_locked = false;
+	}
+private:
+	atomic<bool> _locked = false;
+
+};
+SpinLock spinLock;
+void Add()
+{
+	for (int32 i = 0; i < 100000; i++)
+	{
+		spinLock.Lock();
+		sum++;
+		spinLock.UnLock();
+	}
+};
+void Sub()
+{
+	for (int32 i = 0; i < 100000; i++)
+	{
+		spinLock.Lock();
+		sum--;
+		spinLock.UnLock();
+	}
+};
 int main()
 {
-	thread t1(Push);
-	thread t2(Push);
+	thread t1(Add);
+	thread t2(Sub);
 
 	t1.join();
 	t2.join();
-	cout << v.size() << endl;
+	cout << sum << endl;
 
 }
