@@ -6,7 +6,7 @@
 #include <mutex>
 
 int32 sum = 0;
-
+int32 cnt = 0;
 class SpinLock
 {
 public:
@@ -17,6 +17,8 @@ public:
 		while (_locked.compare_exchange_strong(expected, desired) == false)
 		{
 			expected = false;
+			this_thread::sleep_for(1ms); //추가된부분
+			cnt++;
 		}
 	}
 	void UnLock()
@@ -30,7 +32,7 @@ private:
 SpinLock spinLock;
 void Add()
 {
-	for (int32 i = 0; i < 100000; i++)
+	for (int32 i = 0; i < 100'0000; i++)
 	{
 		spinLock.Lock();
 		sum++;
@@ -39,7 +41,7 @@ void Add()
 };
 void Sub()
 {
-	for (int32 i = 0; i < 100000; i++)
+	for (int32 i = 0; i < 100'0000; i++)
 	{
 		spinLock.Lock();
 		sum--;
@@ -54,5 +56,6 @@ int main()
 	t1.join();
 	t2.join();
 	cout << sum << endl;
+	cout << cnt << endl;
 
 }
