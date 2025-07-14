@@ -4,58 +4,51 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
+#include<Windows.h>
 
-int32 sum = 0;
-int32 cnt = 0;
-class SpinLock
+mutex m;
+queue<int32> q;
+
+HANDLE handle;
+
+void Producer()
 {
-public:
-	void Lock()
+	while (true)
 	{
-		bool expected = false;
-		bool desired = true;
-		while (_locked.compare_exchange_strong(expected, desired) == false)
 		{
-			expected = false;
-			this_thread::sleep_for(1ms); //추가된부분
-			cnt++;
-		}
-	}
-	void UnLock()
-	{
-		_locked = false;
-	}
-private:
-	atomic<bool> _locked = false;
+			unique_lock<mutex> lock(m);
 
+			q.push(100);
+		}
+
+		::SetEvent(handle); //파란불로 바꿔라
+		this_thread::sleep_for(1000000ms);
+	}
+	
 };
-SpinLock spinLock;
-void Add()
+void Consumer()
 {
-	for (int32 i = 0; i < 100'0000; i++)
+	while (true)
 	{
-		spinLock.Lock();
-		sum++;
-		spinLock.UnLock();
+		WaitForSingleObject(handle, INFINITE);//파란불(true) 될때까지 계속 기다려라
+		unique_lock<mutex> lock(m);
+
+		if (q.empty() == false)
+		{
+			int32 data = q.front();
+			q.pop();
+			cout << data << endl;
+		}
+	
 	}
 };
-void Sub()
-{
-	for (int32 i = 0; i < 100'0000; i++)
-	{
-		spinLock.Lock();
-		sum--;
-		spinLock.UnLock();
-	}
-};
+
 int main()
 {
-	thread t1(Add);
-	thread t2(Sub);
+	handle = CreateEvent(NULL/*보안*/, FALSE/*MaunualReset*/, FALSE, NULL);
+	thread t1(Producer);
+	thread t2(Consumer);
 
 	t1.join();
 	t2.join();
-	cout << sum << endl;
-	cout << cnt << endl;
-
 }
