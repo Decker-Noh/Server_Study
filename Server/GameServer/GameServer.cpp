@@ -4,13 +4,11 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
-#include<Windows.h>
 
 mutex m;
 queue<int32> q;
 
-HANDLE handle;
-
+condition_variable cv;
 void Producer()
 {
 	while (true)
@@ -20,9 +18,11 @@ void Producer()
 
 			q.push(100);
 		}
-
-		::SetEvent(handle); //파란불로 바꿔라
-		this_thread::sleep_for(1000000ms);
+		cv.notify_one();
+		//락을 잡고
+		//공유 변수 수정
+		//락을 풀고
+		//다른 쓰레드에게 통지
 	}
 	
 };
@@ -30,22 +30,23 @@ void Consumer()
 {
 	while (true)
 	{
-		WaitForSingleObject(handle, INFINITE);//파란불(true) 될때까지 계속 기다려라
 		unique_lock<mutex> lock(m);
+		cv.wait(lock, []() {return q.empty() == false;});
+		// 1.락을 잡고
+		// 2. 조건 확인 해주고
+		// 3. 조건 맞으면 진행, 아니면 다시 대기 모드
 
-		if (q.empty() == false)
-		{
-			int32 data = q.front();
-			q.pop();
-			cout << data << endl;
-		}
+		int32 data = q.front();
+		q.pop();
+		cout << q.size() << endl;
+
 	
 	}
 };
 
 int main()
 {
-	handle = CreateEvent(NULL/*보안*/, FALSE/*MaunualReset*/, FALSE, NULL);
+
 	thread t1(Producer);
 	thread t2(Consumer);
 
