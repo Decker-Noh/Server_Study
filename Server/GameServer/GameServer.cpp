@@ -1,27 +1,46 @@
 ﻿#include "pch.h"
 #include <iostream>
-
 #include <thread>
 #include <atomic>
 #include <mutex>
-
 #include<future>
-int64 Calculate()
+
+int32 x = 0;
+int32 y = 0;
+int32 r1 = 0;
+int32 r2 = 0;
+
+int32 cnt = 0;
+volatile bool ready = false;
+void thread1()
 {
-	int64 sum = 0;
-	for (int32 i = 0; i < 1'00000'0000; i++)
-		sum += i;
-	return sum;
+	while (!ready)
+		;
+	x = 1;
+	r2 = y;
+}
+void thread2()
+{
+	while (!ready)
+		;
+	y = 1;
+	r1 = x;
 }
 int main()
 {
-	std::future<int64> future = std::async(std::launch::async, Calculate);
-	//2가지 옵션이 있음
-	//deffered -> 싱글스레드로 단순 함수의 동작을 나중으로 미뤄서 하는것
-	//async -> 스레드를 하나 생성해서 함수를 동작시킴
-	cout << "ㅎㅇ" << endl;
-	int64 result = future.get();
-	cout << "ㅎㅇ2" << endl;
-	cout << result << endl;
+	while (true)
+	{
 
+		x = y = r1 = r2 = 0;
+		thread t1(thread1);
+		thread t2(thread2);
+
+		
+		t1.join();
+		t2.join();
+		cnt++;
+		if (r1 == 0 && r2 == 0)
+			break;
+	}
+	cout << cnt << "번 걸림" << endl;
 }
