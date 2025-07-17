@@ -5,42 +5,28 @@
 #include <mutex>
 #include<future>
 
-int32 x = 0;
-int32 y = 0;
-int32 r1 = 0;
-int32 r2 = 0;
 
-int32 cnt = 0;
-volatile bool ready = false;
-void thread1()
-{
-	while (!ready)
-		;
-	x = 1;
-	r2 = y;
-}
-void thread2()
-{
-	while (!ready)
-		;
-	y = 1;
-	r1 = x;
-}
-int main()
+
+thread_local int32 LTreadID = 0;
+
+void ThreadMain(int32 _threadID)
 {
 	while (true)
 	{
-
-		x = y = r1 = r2 = 0;
-		thread t1(thread1);
-		thread t2(thread2);
-
-		
-		t1.join();
-		t2.join();
-		cnt++;
-		if (r1 == 0 && r2 == 0)
-			break;
+		LTreadID = _threadID;
+		cout << "Hello Thread!" << LTreadID << endl;
+		this_thread::sleep_for(1s);
 	}
-	cout << cnt << "번 걸림" << endl;
+}
+int main()
+{
+	vector<thread> threads;
+	for (int32 i = 0; i < 10; i++)
+	{
+		int32 threadID = i + 1;
+		
+		threads.push_back(thread(ThreadMain, threadID));
+	}
+	for (thread& t : threads)
+		t.join();
 }
