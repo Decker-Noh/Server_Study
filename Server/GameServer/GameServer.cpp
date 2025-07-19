@@ -5,38 +5,26 @@
 #include <mutex>
 #include<future>
 #include<Windows.h>
-#include "ConcurrentQueue.h";
-#include "ConcurrentStack.h";
+#include<ThreadManager.h>
 
-LockStack<int32> s;
-LockQueue<int32> q;
+CoreGlobal coreGlobal;
 
-void Push()
+void ThreadMain()
 {
 	while (true)
 	{
-		int32 value = rand() % 100;
-		q.Push(value);
+		cout << "Hello Thread Manager"<< LthreadId << endl;
 
-		this_thread::sleep_for(10ms);
-	}
-}
-void Pop()
-{
-	while (true)
-	{
-		int32 data = 0;
-		if (q.TryPop(OUT data))
-		{
-			cout << data << endl;
-		}
+		this_thread::sleep_for(1s);
 	}
 }
 int main()
 {
-	thread t1(Push);
-	thread t2(Pop);
+	for (int32 i = 0; i < 5; i++)
+	{
+		GThreadManager->Launch(ThreadMain);
+	}
 
-	t1.join();
-	t2.join();
+	GThreadManager->Join();
+
 }
