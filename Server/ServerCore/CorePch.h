@@ -1,9 +1,9 @@
 #pragma once
 
 #include "Types.h"
+#include "CoreMacro.h"
 #include "CoreGlobal.h"
 #include "CoreTLS.h"
-#include "CoreMacro.h"
 
 #include <vector>
 #include <list>

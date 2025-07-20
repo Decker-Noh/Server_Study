@@ -7,7 +7,6 @@
 #include<Windows.h>
 #include<ThreadManager.h>
 
-CoreGlobal coreGlobal;
 
 void ThreadMain()
 {

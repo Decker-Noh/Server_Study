@@ -13,3 +13,5 @@ CoreGlobal::~CoreGlobal()
 {
 	delete GThreadManager;
 }
+
+CoreGlobal coreGlobal;
