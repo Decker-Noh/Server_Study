@@ -15,6 +15,7 @@
 #include <unordered_set>
 
 #include <iostream>
-using namespace std;
+#include <Windows.h>
+#include "Lock.h"
 
-void HelloWorld();
+using namespace std;
