@@ -21,10 +21,10 @@ class Lock
 		EMPTY_FALG = 0x0000'0000
 	};
 public:
-	void WriteLock();
-	void WriteUnlock();
-	void ReadLock();
-	void ReadUnlock();
+	void WriteLock(const char* name);
+	void WriteUnlock(const char* name);
+	void ReadLock(const char* name);
+	void ReadUnlock(const char* name);
 private:
 	Atomic<uint32> _lockFlag = EMPTY_FALG; //현재 락의 상태 32비트
 	uint16 _writeCount; //재귀를 허락하지만 추적하기 위한 변수, 동일한 스레드가 잡고있다면 허락
@@ -35,19 +35,21 @@ private:
 class ReadLockGuard
 {
 public:
-	ReadLockGuard(Lock& lock) :_lock(lock) { _lock.ReadLock(); }
-	~ReadLockGuard() { _lock.ReadUnlock(); }
+	ReadLockGuard(Lock& lock, const char* name) :_lock(lock), _name(name) { _lock.ReadLock(name); }
+	~ReadLockGuard() { _lock.ReadUnlock(_name); }
 private:
 	Lock& _lock;
+	const char* _name;
 
 };
 
 class WriteLockGuard
 {
 public:
-	WriteLockGuard(Lock& lock) :_lock(lock) { _lock.WriteLock(); }
-	~WriteLockGuard() { _lock.WriteUnlock(); }
+	WriteLockGuard(Lock& lock, const char* name) :_lock(lock), _name(name) { _lock.WriteLock(name); }
+	~WriteLockGuard() { _lock.WriteUnlock(_name); }
 private:
 	Lock& _lock;
+	const char* _name;
 
 };

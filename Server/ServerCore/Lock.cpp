@@ -1,9 +1,14 @@
 #include "pch.h"
 #include "Lock.h"
 #include "CoreTLS.h"
+#include "DeadLockProfiler.h"
 
-void Lock::WriteLock()
+void Lock::WriteLock(const char* name)
 {
+
+#if _DEBUG
+	GDeadLockProfiler->PushLock(name);
+#endif
 	//아무도 소유 및 공유하고 있지 않을때 경합권을 가진다.
 	
 	//같은 스레드라면 재귀를 위해 통과를 허용
@@ -38,9 +43,11 @@ void Lock::WriteLock()
 	}
 }
 
-void Lock::WriteUnlock()
+void Lock::WriteUnlock(const char* name)
 {
-
+#if _DEBUG
+	GDeadLockProfiler->PopLock(name);
+#endif
 	//ReadLock을 다 풀기전까지는 WriteLock 불가능
 	//WriteLock이 잡혀있는데 Read 카운트가 있으면 뭔가 이상하니 크래쉬
 	if ((_lockFlag.load() & READ_THREAD_MASK) != 0)
@@ -52,8 +59,11 @@ void Lock::WriteUnlock()
 	}
 }
 
-void Lock::ReadLock()
+void Lock::ReadLock(const char* name)
 {
+#if _DEBUG
+	GDeadLockProfiler->PushLock(name);
+#endif
 	const uint32 lockThreadId = (_lockFlag.load() & WRITE_THREAD_MASK) >> 16;
 
 	if (lockThreadId == LthreadId)
@@ -80,8 +90,11 @@ void Lock::ReadLock()
 	}
 }
 
-void Lock::ReadUnlock()
+void Lock::ReadUnlock(const char* name)
 {
+#if _DEBUG
+	GDeadLockProfiler->PopLock(name);
+#endif
 	if ((_lockFlag.fetch_sub(1) & READ_THREAD_MASK) == 0)
 	{
 		CRASH("MULTIPLE_UNLOCK");
