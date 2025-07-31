@@ -1,57 +1,87 @@
 ﻿#include "pch.h"
 #include <iostream>
-#include <thread>
+#include "CorePch.h"
 #include <atomic>
 #include <mutex>
-#include<future>
-#include<Windows.h>
-#include<ThreadManager.h>
-#include <vector>
+#include <windows.h>
+#include <future>
+#include "ThreadManager.h"
 
-atomic<int32> sum;
+#include "RefCounting.h"
 
-void Calculator(int val)
+class Wraight : public RefCountable
 {
-	if (val == 1)
-		return;
-	if (val == 2 || val == 3)
-	{
-		sum++;
-		return;
-	}
-	for (int i = 2; i < val; i++)
-	{
-		if ((val % i) == 0)
-			return;
-	}
-	sum++;
-}
-void Machin(int start, int end)
+public:
+	int _hp = 150;
+	int _posX = 0;
+	int _posY = 0;
+};
+
+using WraightRef = TSharedPtr<Wraight>;
+
+class Missile : public RefCountable
 {
-	for (int i = start; i <= end; i++)
+public:
+	void SetTarget(WraightRef target)
 	{
-		Calculator(i);
+		_target = target;
+		// 중간에 개입 가능
+		//target->AddRef();
 	}
-}
+
+	bool Update()
+	{
+		if (_target == nullptr)
+			return true;
+
+		int posX = _target->_posX;
+		int posY = _target->_posY;
+
+		// TODO : 쫓아간다
+
+		if (_target->_hp == 0)
+		{
+			//_target->ReleaseRef();
+			_target = nullptr;
+			return true;
+		}
+
+		return false;
+	}
+
+	WraightRef _target = nullptr;
+};
+
+using MissileRef = TSharedPtr<Missile>;
+
 int main()
 {
-	const int MAX_NUMBER = 100'0000;
+	WraightRef wraight(new Wraight()); //wraight 참조 2
+	wraight->ReleaseRef(); //wraight 참조 1
+	MissileRef missile(new Missile()); //Missile 참조 2
+	missile->ReleaseRef(); //Missile 참조 1
 
-	vector<thread> threads;
-	int coreNum = std::thread::hardware_concurrency();
-	
-	int coreWork = (MAX_NUMBER / coreNum) + 1;
+	missile->SetTarget(wraight); //wraight 참조 2
 
-	for (int i = 0; i < coreNum; i++)
+	// 레이스가 피격 당함
+	wraight->_hp = 0;
+	//delete wraight;
+	//wraight->ReleaseRef();
+	wraight = nullptr; //wraight 참조 1 //nullptr이 오른값처리되서 이동연산자가 발동됨
+
+	while (true)
 	{
-		threads.push_back(thread(Machin, (i * coreWork) + 1, min(MAX_NUMBER,((i + 1) * coreWork))));
-
+		if (missile)
+		{
+			if (missile->Update())
+			{
+				//missile->ReleaseRef();
+				missile = nullptr; //미사일 참조 0
+			}
+		}
 	}
-	for (int i = 0; i < coreNum; i++)
-	{
-		threads[i].join();
 
-	}
-	cout << sum << endl;
-
+	//missile->ReleaseRef();
+	missile = nullptr;
+	//delete missile;
 }
